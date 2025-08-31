@@ -2,7 +2,8 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
     <title>三角圆圈棋盘游戏</title>
     <style>
         * {
@@ -57,17 +58,19 @@
             width: 500px;
             height: 500px;
             margin: 0 auto;
+            padding: 50px;
+            box-sizing: border-box;
         }
 
         .board-background {
             position: absolute;
-            top: 0;
-            left: 0;
+            top: 50px;
+            left: 50px;
             width: 400px;
             height: 400px;
             background: #f5f5f5;
             border-radius: 10px;
-            margin: 50px;
+            z-index: 0;
         }
 
         .board-lines {
@@ -76,20 +79,11 @@
             left: 50px;
             width: 400px;
             height: 400px;
-        }
-
-        .horizontal-line {
-            position: absolute;
-            width: 100%;
-            height: 2px;
-            background: #666;
-        }
-
-        .vertical-line {
-            position: absolute;
-            width: 2px;
-            height: 100%;
-            background: #666;
+            background-image: 
+                repeating-linear-gradient(to right, transparent, transparent 98px, #666 98px, #666 100px),
+                repeating-linear-gradient(to bottom, transparent, transparent 98px, #666 98px, #666 100px);
+            border: 2px solid #666;
+            z-index: 1;
         }
 
         .board {
@@ -98,6 +92,7 @@
             left: 50px;
             width: 400px;
             height: 400px;
+            z-index: 2;
         }
 
         .cell {
@@ -111,6 +106,37 @@
             z-index: 10;
             transform: translate(-50%, -50%);
         }
+        
+        /* 精确定位每个棋子到交叉点 */
+        .cell[data-row="0"][data-col="0"] { top: 0px; left: 0px; }
+        .cell[data-row="0"][data-col="1"] { top: 0px; left: 100px; }
+        .cell[data-row="0"][data-col="2"] { top: 0px; left: 200px; }
+        .cell[data-row="0"][data-col="3"] { top: 0px; left: 300px; }
+        .cell[data-row="0"][data-col="4"] { top: 0px; left: 400px; }
+        
+        .cell[data-row="1"][data-col="0"] { top: 100px; left: 0px; }
+        .cell[data-row="1"][data-col="1"] { top: 100px; left: 100px; }
+        .cell[data-row="1"][data-col="2"] { top: 100px; left: 200px; }
+        .cell[data-row="1"][data-col="3"] { top: 100px; left: 300px; }
+        .cell[data-row="1"][data-col="4"] { top: 100px; left: 400px; }
+        
+        .cell[data-row="2"][data-col="0"] { top: 200px; left: 0px; }
+        .cell[data-row="2"][data-col="1"] { top: 200px; left: 100px; }
+        .cell[data-row="2"][data-col="2"] { top: 200px; left: 200px; }
+        .cell[data-row="2"][data-col="3"] { top: 200px; left: 300px; }
+        .cell[data-row="2"][data-col="4"] { top: 200px; left: 400px; }
+        
+        .cell[data-row="3"][data-col="0"] { top: 300px; left: 0px; }
+        .cell[data-row="3"][data-col="1"] { top: 300px; left: 100px; }
+        .cell[data-row="3"][data-col="2"] { top: 300px; left: 200px; }
+        .cell[data-row="3"][data-col="3"] { top: 300px; left: 300px; }
+        .cell[data-row="3"][data-col="4"] { top: 300px; left: 400px; }
+        
+        .cell[data-row="4"][data-col="0"] { top: 400px; left: 0px; }
+        .cell[data-row="4"][data-col="1"] { top: 400px; left: 100px; }
+        .cell[data-row="4"][data-col="2"] { top: 400px; left: 200px; }
+        .cell[data-row="4"][data-col="3"] { top: 400px; left: 300px; }
+        .cell[data-row="4"][data-col="4"] { top: 400px; left: 400px; }
 
         .intersection {
             width: 50px;
@@ -230,6 +256,254 @@
             color: #333;
             margin-bottom: 20px;
         }
+
+        /* 手机端响应式优化 */
+        @media screen and (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            .game-container {
+                padding: 15px;
+                width: 95vw;
+                max-width: 100vw;
+            }
+
+            h1 {
+                font-size: 20px;
+                margin-bottom: 15px;
+            }
+
+            .game-info {
+                font-size: 14px;
+                padding: 10px;
+                margin-bottom: 15px;
+            }
+
+            /* 棋盘自适应 - CSS Grid重构 */
+            .board-container {
+                --board-size: min(90vw, 400px);
+                width: var(--board-size);
+                height: var(--board-size);
+                margin: 0 auto;
+                position: relative;
+            }
+
+            .board-background {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: #f5f5f5;
+                border-radius: 10px;
+                z-index: 0;
+            }
+
+            .board-lines {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background-image: 
+                    repeating-linear-gradient(to right, transparent, transparent calc(25% - 1px), #666 calc(25% - 1px), #666 25%),
+                    repeating-linear-gradient(to bottom, transparent, transparent calc(25% - 1px), #666 calc(25% - 1px), #666 25%);
+                background-size: 100% 100%;
+                z-index: 1;
+            }
+            
+            .board-lines::after {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                border: 2px solid #666;
+                pointer-events: none;
+            }
+
+            .board {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                z-index: 2;
+            }
+
+            /* 棋子定位到交叉点 */
+            .cell {
+                position: absolute !important;
+                width: 50px;
+                height: 50px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transform: translate(-50%, -50%);
+            }
+
+            /* 响应式定位 - 使用百分比 */
+            .cell[data-row="0"][data-col="0"] { top: 0%; left: 0%; }
+            .cell[data-row="0"][data-col="1"] { top: 0%; left: 25%; }
+            .cell[data-row="0"][data-col="2"] { top: 0%; left: 50%; }
+            .cell[data-row="0"][data-col="3"] { top: 0%; left: 75%; }
+            .cell[data-row="0"][data-col="4"] { top: 0%; left: 100%; }
+            
+            .cell[data-row="1"][data-col="0"] { top: 25%; left: 0%; }
+            .cell[data-row="1"][data-col="1"] { top: 25%; left: 25%; }
+            .cell[data-row="1"][data-col="2"] { top: 25%; left: 50%; }
+            .cell[data-row="1"][data-col="3"] { top: 25%; left: 75%; }
+            .cell[data-row="1"][data-col="4"] { top: 25%; left: 100%; }
+            
+            .cell[data-row="2"][data-col="0"] { top: 50%; left: 0%; }
+            .cell[data-row="2"][data-col="1"] { top: 50%; left: 25%; }
+            .cell[data-row="2"][data-col="2"] { top: 50%; left: 50%; }
+            .cell[data-row="2"][data-col="3"] { top: 50%; left: 75%; }
+            .cell[data-row="2"][data-col="4"] { top: 50%; left: 100%; }
+            
+            .cell[data-row="3"][data-col="0"] { top: 75%; left: 0%; }
+            .cell[data-row="3"][data-col="1"] { top: 75%; left: 25%; }
+            .cell[data-row="3"][data-col="2"] { top: 75%; left: 50%; }
+            .cell[data-row="3"][data-col="3"] { top: 75%; left: 75%; }
+            .cell[data-row="3"][data-col="4"] { top: 75%; left: 100%; }
+            
+            .cell[data-row="4"][data-col="0"] { top: 100%; left: 0%; }
+            .cell[data-row="4"][data-col="1"] { top: 100%; left: 25%; }
+            .cell[data-row="4"][data-col="2"] { top: 100%; left: 50%; }
+            .cell[data-row="4"][data-col="3"] { top: 100%; left: 75%; }
+            .cell[data-row="4"][data-col="4"] { top: 100%; left: 100%; }
+
+            .intersection {
+                width: 80%;
+                height: 80%;
+                border-radius: 50%;
+            }
+
+            .piece {
+                width: 70%;
+                height: 70%;
+                font-size: calc(0.8rem + 2vw);
+            }
+
+            /* 控制按钮优化 */
+            .controls {
+                margin: 15px auto;
+                gap: 10px;
+            }
+
+            .controls button {
+                padding: 10px 20px;
+                font-size: 14px;
+            }
+
+            /* 规则区域优化 */
+            .rules {
+                margin-top: 15px;
+                padding: 10px;
+                font-size: 12px;
+            }
+
+            .rules h3 {
+                font-size: 14px;
+                margin-bottom: 8px;
+            }
+
+            .rules ul {
+                margin-left: 15px;
+            }
+
+            /* 模态框优化 */
+            .modal-content {
+                width: 85%;
+                padding: 20px;
+            }
+
+            .modal h2 {
+                font-size: 18px;
+            }
+        }
+
+        /* 超小屏幕优化 */
+        @media screen and (max-width: 400px) {
+            h1 {
+                font-size: 18px;
+            }
+
+            .board-container {
+                width: 90vw;
+                height: 90vw;
+            }
+
+            .cell {
+                width: 40px;
+                height: 40px;
+            }
+
+            .intersection {
+                width: 35px;
+                height: 35px;
+            }
+
+            .piece {
+                width: 28px;
+                height: 28px;
+                font-size: 20px;
+            }
+
+            .rules {
+                display: none;
+            }
+        }
+
+        /* 横屏模式优化 */
+        @media screen and (max-height: 500px) and (orientation: landscape) {
+            .game-container {
+                padding: 10px;
+            }
+
+            h1 {
+                font-size: 16px;
+                margin-bottom: 10px;
+            }
+
+            .board-container {
+                width: 60vh;
+                height: 60vh;
+            }
+
+            .rules {
+                display: none;
+            }
+        }
+
+        /* 触摸设备优化 */
+        @media (hover: none) and (pointer: coarse) {
+            .intersection:hover {
+                background: none;
+            }
+
+            .intersection.valid-move {
+                background: rgba(76, 175, 80, 0.5);
+                border: 2px solid #4caf50;
+            }
+
+            button:active {
+                transform: scale(0.98);
+            }
+        }
+
+        /* iOS优化 */
+        @supports (-webkit-touch-callout: none) {
+            body {
+                -webkit-tap-highlight-color: transparent;
+            }
+
+            .intersection {
+                -webkit-tap-highlight-color: rgba(0,0,0,0.1);
+            }
+        }
     </style>
 </head>
 <body>
@@ -244,18 +518,7 @@
         <div class="board-container">
             <div class="board-background"></div>
             <div class="board-lines">
-                <!-- 横线 -->
-                <div class="horizontal-line" style="top: 0;"></div>
-                <div class="horizontal-line" style="top: 100px;"></div>
-                <div class="horizontal-line" style="top: 200px;"></div>
-                <div class="horizontal-line" style="top: 300px;"></div>
-                <div class="horizontal-line" style="top: 400px;"></div>
-                <!-- 竖线 -->
-                <div class="vertical-line" style="left: 0;"></div>
-                <div class="vertical-line" style="left: 100px;"></div>
-                <div class="vertical-line" style="left: 200px;"></div>
-                <div class="vertical-line" style="left: 300px;"></div>
-                <div class="vertical-line" style="left: 400px;"></div>
+                <!-- 网格线通过CSS背景图实现 -->
             </div>
             <div class="board" id="board"></div>
         </div>
@@ -344,9 +607,14 @@
                     cell.dataset.row = row;
                     cell.dataset.col = col;
                     
-                    // 将棋子定位在交叉点上
-                    cell.style.left = `${col * 100}px`;
-                    cell.style.top = `${row * 100}px`;
+                    // 移动端使用固定定位，CSS会处理位置
+                    if (window.innerWidth <= 768) {
+                        // 手机端通过CSS data属性定位
+                    } else {
+                        // 桌面端使用百分比定位
+                        cell.style.left = `${col * 25}%`;
+                        cell.style.top = `${row * 25}%`;
+                    }
                     
                     const intersection = document.createElement('div');
                     intersection.className = 'intersection';
