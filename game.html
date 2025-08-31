@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>三角圆圈棋盘游戏 - 网络对战版</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .lobby-container {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            text-align: center;
+            min-width: 400px;
+        }
+
+        .lobby-container h1 {
+            color: #333;
+            margin-bottom: 30px;
+        }
+
+        .lobby-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .lobby-button {
+            padding: 15px 30px;
+            font-size: 18px;
+            border: none;
+            border-radius: 10px;
+            background: #667eea;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .lobby-button:hover {
+            background: #764ba2;
+            transform: translateY(-2px);
+        }
+
+        .room-input {
+            padding: 10px;
+            font-size: 16px;
+            border: 2px solid #667eea;
+            border-radius: 5px;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        .room-info {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f5f5f5;
+            border-radius: 10px;
+            display: none;
+        }
+
+        .room-info.show {
+            display: block;
+        }
+
+        .room-id {
+            font-family: monospace;
+            font-size: 20px;
+            color: #667eea;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        .game-container {
+            display: none;
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .game-container.show {
+            display: block;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .network-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: #e8f4fd;
+            border-radius: 10px;
+        }
+
+        .connection-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #4caf50;
+        }
+
+        .status-indicator.disconnected {
+            background: #f44336;
+        }
+
+        .status-indicator.waiting {
+            background: #ff9800;
+            animation: pulse 1.5s infinite;
+        }
+
+        .player-role {
+            font-weight: bold;
+            color: #764ba2;
+        }
+
+        .game-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f5f5f5;
+            border-radius: 10px;
+        }
+
+        .current-player {
+            font-weight: bold;
+            color: #764ba2;
+        }
+
+        .game-status {
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        .board-container {
+            position: relative;
+            width: 500px;
+            height: 500px;
+            margin: 0 auto;
+        }
+
+        .board-background {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 400px;
+            height: 400px;
+            background: #f5f5f5;
+            border-radius: 10px;
+            margin: 50px;
+        }
+
+        .board-lines {
+            position: absolute;
+            top: 50px;
+            left: 50px;
+            width: 400px;
+            height: 400px;
+        }
+
+        .horizontal-line {
+            position: absolute;
+            width: 100%;
+            height: 2px;
+            background: #666;
+        }
+
+        .vertical-line {
+            position: absolute;
+            width: 2px;
+            height: 100%;
+            background: #666;
+        }
+
+        .board {
+            position: absolute;
+            top: 50px;
+            left: 50px;
+            width: 400px;
+            height: 400px;
+        }
+
+        .cell {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            z-index: 10;
+            transform: translate(-50%, -50%);
+        }
+
+        .cell.disabled {
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .intersection {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.3s;
+        }
+
+        .intersection:hover {
+            background: rgba(0, 0, 0, 0.05);
+        }
+
+        .intersection.selected {
+            background: rgba(255, 235, 59, 0.5);
+            box-shadow: 0 0 20px rgba(255, 193, 7, 0.5);
+        }
+
+        .intersection.valid-move {
+            background: rgba(76, 175, 80, 0.3);
+            animation: pulse 1s infinite;
+        }
+
+        .intersection.last-move {
+            box-shadow: 0 0 15px rgba(33, 150, 243, 0.8);
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        .piece {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 30px;
+            transition: transform 0.3s;
+        }
+
+        .piece.triangle::before {
+            content: '▲';
+            color: #e91e63;
+        }
+
+        .piece.circle::before {
+            content: '●';
+            color: #2196f3;
+        }
+
+        .controls {
+            margin: 20px auto;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            background: #667eea;
+            color: white;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background: #764ba2;
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .chat-container {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 10px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .chat-messages {
+            max-height: 120px;
+            overflow-y: auto;
+            margin-bottom: 10px;
+            padding: 10px;
+            background: white;
+            border-radius: 5px;
+        }
+
+        .chat-message {
+            margin-bottom: 5px;
+            padding: 5px;
+        }
+
+        .chat-message.own {
+            text-align: right;
+            color: #667eea;
+        }
+
+        .chat-message.opponent {
+            text-align: left;
+            color: #764ba2;
+        }
+
+        .chat-message.system {
+            text-align: center;
+            color: #999;
+            font-style: italic;
+        }
+
+        .chat-input-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+            min-width: 300px;
+        }
+
+        .modal h2 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .spectator-badge {
+            background: #ff9800;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .waiting-message {
+            text-align: center;
+            padding: 20px;
+            background: #fff3cd;
+            color: #856404;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .copy-button {
+            padding: 5px 10px;
+            font-size: 14px;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+    <!-- 大厅界面 -->
+    <div class="lobby-container" id="lobby">
+        <h1>三角圆圈棋盘游戏</h1>
+        <div class="lobby-buttons">
+            <button class="lobby-button" onclick="quickMatch()">快速匹配</button>
+            <button class="lobby-button" onclick="createPrivateRoom()">创建私人房间</button>
+            <div>
+                <input type="text" class="room-input" id="roomIdInput" placeholder="输入房间号">
+                <button class="lobby-button" onclick="joinPrivateRoom()">加入房间</button>
+            </div>
+            <button class="lobby-button" onclick="playOffline()">单机游戏</button>
+        </div>
+        <div class="room-info" id="roomInfo">
+            <p>房间已创建！分享房间号给朋友：</p>
+            <div class="room-id" id="roomIdDisplay"></div>
+            <button class="copy-button" onclick="copyRoomId()">复制</button>
+            <p>等待对手加入...</p>
+        </div>
+    </div>
+
+    <!-- 游戏界面 -->
+    <div class="game-container" id="gameContainer">
+        <h1>三角圆圈棋盘游戏 - 网络对战</h1>
+        
+        <div class="network-info">
+            <div class="connection-status">
+                <span class="status-indicator" id="statusIndicator"></span>
+                <span id="connectionText">已连接</span>
+            </div>
+            <div class="player-role">
+                你是: <span id="playerRole">-</span>
+            </div>
+            <div class="spectator-badge" id="spectatorBadge" style="display: none;">观战模式</div>
+        </div>
+
+        <div class="waiting-message" id="waitingMessage" style="display: none;">
+            等待对手加入... 房间号: <span id="waitingRoomId"></span>
+        </div>
+        
+        <div class="game-info">
+            <div class="current-player">当前玩家: <span id="currentPlayer">三角形</span></div>
+            <div class="game-status">状态: <span id="gameStatus">等待开始</span></div>
+        </div>
+
+        <div class="board-container">
+            <div class="board-background"></div>
+            <div class="board-lines">
+                <!-- 横线 -->
+                <div class="horizontal-line" style="top: 0;"></div>
+                <div class="horizontal-line" style="top: 100px;"></div>
+                <div class="horizontal-line" style="top: 200px;"></div>
+                <div class="horizontal-line" style="top: 300px;"></div>
+                <div class="horizontal-line" style="top: 400px;"></div>
+                <!-- 竖线 -->
+                <div class="vertical-line" style="left: 0;"></div>
+                <div class="vertical-line" style="left: 100px;"></div>
+                <div class="vertical-line" style="left: 200px;"></div>
+                <div class="vertical-line" style="left: 300px;"></div>
+                <div class="vertical-line" style="left: 400px;"></div>
+            </div>
+            <div class="board" id="board"></div>
+        </div>
+
+        <div class="controls">
+            <button onclick="requestUndo()" id="undoButton">请求撤销</button>
+            <button onclick="leaveRoom()">离开房间</button>
+        </div>
+
+        <div class="chat-container">
+            <div class="chat-messages" id="chatMessages"></div>
+            <div class="chat-input-group">
+                <input type="text" class="chat-input" id="chatInput" placeholder="输入消息..." onkeypress="handleChatKeypress(event)">
+                <button onclick="sendMessage()">发送</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 游戏结束弹窗 -->
+    <div class="modal" id="gameOverModal">
+        <div class="modal-content">
+            <h2 id="winnerText">游戏结束</h2>
+            <div class="modal-buttons">
+                <button onclick="returnToLobby()">返回大厅</button>
+                <button onclick="rematch()">再来一局</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 撤销请求弹窗 -->
+    <div class="modal" id="undoModal">
+        <div class="modal-content">
+            <h2>对方请求撤销上一步</h2>
+            <div class="modal-buttons">
+                <button onclick="acceptUndo()">同意</button>
+                <button onclick="rejectUndo()">拒绝</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        // 网络游戏状态
+        let socket = null;
+        let roomId = null;
+        let playerRole = null;
+        let isMyTurn = false;
+        let isSpectator = false;
+        
+        // 游戏状态
+        let board = [];
+        let currentPlayer = 'triangle';
+        let selectedCell = null;
+        let gameOver = false;
+        let lastMove = null;
+
+        // 连接服务器
+        function connectToServer() {
+            socket = io();
+            
+            socket.on('connect', () => {
+                console.log('连接到服务器');
+                updateConnectionStatus(true);
+            });
+
+            socket.on('disconnect', () => {
+                console.log('断开连接');
+                updateConnectionStatus(false);
+            });
+
+            // 加入房间成功
+            socket.on('joinedRoom', (data) => {
+                roomId = data.roomId;
+                playerRole = data.role;
+                board = data.board;
+                currentPlayer = data.currentPlayer;
+                
+                showGame();
+                updatePlayerInfo();
+                renderBoard();
+                
+                if (data.waiting) {
+                    showWaitingMessage(roomId);
+                }
+            });
+
+            // 创建房间成功
+            socket.on('roomCreated', (data) => {
+                roomId = data.roomId;
+                playerRole = data.role;
+                board = data.board;
+                currentPlayer = data.currentPlayer;
+                
+                showRoomInfo(roomId);
+            });
+
+            // 游戏开始
+            socket.on('gameStart', (data) => {
+                board = data.board;
+                currentPlayer = data.currentPlayer;
+                hideWaitingMessage();
+                updateGameStatus('进行中');
+                renderBoard();
+                addSystemMessage('游戏开始！');
+            });
+
+            // 移动更新
+            socket.on('moveUpdate', (data) => {
+                if (data.success) {
+                    board = data.board;
+                    currentPlayer = data.currentPlayer;
+                    lastMove = data.move;
+                    renderBoard();
+                    
+                    if (data.gameStatus && data.gameStatus.finished) {
+                        endGame(data.gameStatus.message);
+                    }
+                }
+            });
+
+            // 移动错误
+            socket.on('moveError', (data) => {
+                alert(data.error);
+            });
+
+            // 观战模式
+            socket.on('spectatorMode', (data) => {
+                isSpectator = true;
+                board = data.board;
+                currentPlayer = data.currentPlayer;
+                
+                showGame();
+                document.getElementById('spectatorBadge').style.display = 'block';
+                document.getElementById('undoButton').disabled = true;
+                renderBoard();
+                addSystemMessage('你正在观战');
+            });
+
+            // 撤销请求
+            socket.on('undoRequest', (data) => {
+                document.getElementById('undoModal').classList.add('show');
+            });
+
+            // 撤销执行
+            socket.on('undoExecuted', (data) => {
+                board = data.board;
+                currentPlayer = data.currentPlayer;
+                renderBoard();
+                addSystemMessage('撤销成功');
+            });
+
+            // 玩家断线
+            socket.on('playerDisconnected', (data) => {
+                addSystemMessage('对手断开连接');
+                updateGameStatus('暂停 - 等待重连');
+            });
+
+            // 玩家重连
+            socket.on('playerReconnected', (data) => {
+                addSystemMessage('对手重新连接');
+                updateGameStatus('进行中');
+            });
+
+            // 新消息
+            socket.on('newMessage', (data) => {
+                addChatMessage(data.message, 'opponent');
+            });
+
+            // 错误处理
+            socket.on('error', (data) => {
+                alert(data.message);
+            });
+        }
+
+        // 快速匹配
+        function quickMatch() {
+            connectToServer();
+            socket.emit('quickMatch');
+        }
+
+        // 创建私人房间
+        function createPrivateRoom() {
+            connectToServer();
+            socket.emit('createRoom');
+        }
+
+        // 加入私人房间
+        function joinPrivateRoom() {
+            const roomIdValue = document.getElementById('roomIdInput').value.trim();
+            if (!roomIdValue) {
+                alert('请输入房间号');
+                return;
+            }
+            connectToServer();
+            socket.emit('joinRoom', roomIdValue);
+        }
+
+        // 单机游戏
+        function playOffline() {
+            window.location.href = 'index.html';
+        }
+
+        // 显示房间信息
+        function showRoomInfo(id) {
+            document.getElementById('roomIdDisplay').textContent = id;
+            document.getElementById('roomInfo').classList.add('show');
+        }
+
+        // 复制房间号
+        function copyRoomId() {
+            const roomIdText = document.getElementById('roomIdDisplay').textContent;
+            navigator.clipboard.writeText(roomIdText).then(() => {
+                alert('房间号已复制');
+            });
+        }
+
+        // 显示游戏界面
+        function showGame() {
+            document.getElementById('lobby').style.display = 'none';
+            document.getElementById('gameContainer').classList.add('show');
+        }
+
+        // 显示等待消息
+        function showWaitingMessage(id) {
+            document.getElementById('waitingRoomId').textContent = id;
+            document.getElementById('waitingMessage').style.display = 'block';
+        }
+
+        // 隐藏等待消息
+        function hideWaitingMessage() {
+            document.getElementById('waitingMessage').style.display = 'none';
+        }
+
+        // 更新连接状态
+        function updateConnectionStatus(connected) {
+            const indicator = document.getElementById('statusIndicator');
+            const text = document.getElementById('connectionText');
+            
+            if (connected) {
+                indicator.classList.remove('disconnected');
+                text.textContent = '已连接';
+            } else {
+                indicator.classList.add('disconnected');
+                text.textContent = '断开连接';
+            }
+        }
+
+        // 更新玩家信息
+        function updatePlayerInfo() {
+            const roleText = playerRole === 'triangle' ? '三角形（红色）' : '圆圈（蓝色）';
+            document.getElementById('playerRole').textContent = roleText;
+        }
+
+        // 更新游戏状态
+        function updateGameStatus(status) {
+            document.getElementById('gameStatus').textContent = status;
+        }
+
+        // 渲染棋盘
+        function renderBoard() {
+            const boardElement = document.getElementById('board');
+            boardElement.innerHTML = '';
+            
+            isMyTurn = (currentPlayer === playerRole);
+            document.getElementById('currentPlayer').textContent = 
+                currentPlayer === 'triangle' ? '三角形' : '圆圈';
+            
+            for (let row = 0; row < 5; row++) {
+                for (let col = 0; col < 5; col++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.dataset.row = row;
+                    cell.dataset.col = col;
+                    
+                    // 如果不是我的回合或是观战者，禁用点击
+                    if (!isMyTurn || isSpectator) {
+                        cell.classList.add('disabled');
+                    }
+                    
+                    cell.style.left = `${col * 100}px`;
+                    cell.style.top = `${row * 100}px`;
+                    
+                    const intersection = document.createElement('div');
+                    intersection.className = 'intersection';
+                    
+                    // 标记最后一步
+                    if (lastMove) {
+                        if ((lastMove.from.row === row && lastMove.from.col === col) ||
+                            (lastMove.to.row === row && lastMove.to.col === col)) {
+                            intersection.classList.add('last-move');
+                        }
+                    }
+                    
+                    if (board[row][col]) {
+                        const piece = document.createElement('div');
+                        piece.className = `piece ${board[row][col]}`;
+                        intersection.appendChild(piece);
+                    }
+                    
+                    if (isMyTurn && !isSpectator) {
+                        intersection.onclick = () => handleCellClick(row, col);
+                    }
+                    
+                    cell.appendChild(intersection);
+                    boardElement.appendChild(cell);
+                }
+            }
+        }
+
+        // 处理格子点击
+        function handleCellClick(row, col) {
+            if (gameOver || !isMyTurn || isSpectator) return;
+            
+            if (selectedCell) {
+                // 尝试移动
+                if (isValidMove(selectedCell.row, selectedCell.col, row, col)) {
+                    makeMove(selectedCell.row, selectedCell.col, row, col);
+                    clearSelection();
+                } else {
+                    clearSelection();
+                    // 如果点击的是当前玩家的棋子，选中它
+                    if (board[row][col] === playerRole) {
+                        selectCell(row, col);
+                    }
+                }
+            } else {
+                // 选择棋子
+                if (board[row][col] === playerRole) {
+                    selectCell(row, col);
+                }
+            }
+        }
+
+        // 选择格子
+        function selectCell(row, col) {
+            selectedCell = { row, col };
+            const cells = document.querySelectorAll('.intersection');
+            cells.forEach((intersection, index) => {
+                const cellElement = intersection.parentElement;
+                const r = parseInt(cellElement.dataset.row);
+                const c = parseInt(cellElement.dataset.col);
+                if (r === row && c === col) {
+                    intersection.classList.add('selected');
+                }
+                // 显示可能的移动
+                if (isValidMove(row, col, r, c)) {
+                    intersection.classList.add('valid-move');
+                }
+            });
+        }
+
+        // 清除选择
+        function clearSelection() {
+            selectedCell = null;
+            document.querySelectorAll('.intersection').forEach(intersection => {
+                intersection.classList.remove('selected', 'valid-move');
+            });
+        }
+
+        // 检查移动是否有效
+        function isValidMove(fromRow, fromCol, toRow, toCol) {
+            const piece = board[fromRow][fromCol];
+            
+            if (!piece) return false;
+            
+            const rowDiff = toRow - fromRow;
+            const colDiff = toCol - fromCol;
+            const absRowDiff = Math.abs(rowDiff);
+            const absColDiff = Math.abs(colDiff);
+            
+            // 所有棋子只能沿着横线或竖线移动，不能走对角线
+            const isOrthogonal = (absRowDiff === 0 && absColDiff > 0) ||  // 水平
+                                (absColDiff === 0 && absRowDiff > 0);      // 竖直
+            
+            if (!isOrthogonal) return false;
+            
+            if (piece === 'triangle') {
+                // 情况1：普通移动 - 移动1格到空位
+                if (board[toRow][toCol] === null) {
+                    const isOneStep = (absRowDiff === 1 && absColDiff === 0) ||  // 上下
+                                     (absRowDiff === 0 && absColDiff === 1);     // 左右
+                    return isOneStep;
+                }
+                
+                // 情况2：吃子 - 必须跳跃2格吃掉圆圈
+                if (board[toRow][toCol] === 'circle') {
+                    const isJumpDistance = (absRowDiff === 2 && absColDiff === 0) || // 竖直跳跃
+                                          (absRowDiff === 0 && absColDiff === 2);    // 水平跳跃
+                    
+                    if (!isJumpDistance) return false;
+                    
+                    // 检查中间位置（必须是空格才能跳跃吃子）
+                    const midRow = fromRow + Math.sign(rowDiff);
+                    const midCol = fromCol + Math.sign(colDiff);
+                    
+                    // 中间位置必须为空
+                    return board[midRow][midCol] === null;
+                }
+                
+                // 不能移动到有三角形的位置
+                return false;
+                
+            } else if (piece === 'circle') {
+                // 圆圈只能上下左右移动1格
+                const isOneStep = (absRowDiff === 1 && absColDiff === 0) ||  // 上下
+                                 (absRowDiff === 0 && absColDiff === 1);     // 左右
+                
+                if (!isOneStep) return false;
+                
+                // 目标位置必须为空
+                return board[toRow][toCol] === null;
+            }
+            
+            return false;
+        }
+
+        // 执行移动
+        function makeMove(fromRow, fromCol, toRow, toCol) {
+            socket.emit('makeMove', {
+                roomId: roomId,
+                fromRow: fromRow,
+                fromCol: fromCol,
+                toRow: toRow,
+                toCol: toCol
+            });
+        }
+
+        // 请求撤销
+        function requestUndo() {
+            if (isSpectator) return;
+            socket.emit('requestUndo', { roomId: roomId });
+        }
+
+        // 同意撤销
+        function acceptUndo() {
+            socket.emit('acceptUndo', { roomId: roomId });
+            document.getElementById('undoModal').classList.remove('show');
+        }
+
+        // 拒绝撤销
+        function rejectUndo() {
+            document.getElementById('undoModal').classList.remove('show');
+            addSystemMessage('撤销请求被拒绝');
+        }
+
+        // 游戏结束
+        function endGame(message) {
+            gameOver = true;
+            updateGameStatus('游戏结束');
+            document.getElementById('winnerText').textContent = message;
+            document.getElementById('gameOverModal').classList.add('show');
+        }
+
+        // 返回大厅
+        function returnToLobby() {
+            window.location.reload();
+        }
+
+        // 再来一局
+        function rematch() {
+            // 实现再来一局逻辑
+            socket.emit('rematch', { roomId: roomId });
+            document.getElementById('gameOverModal').classList.remove('show');
+        }
+
+        // 离开房间
+        function leaveRoom() {
+            if (confirm('确定要离开房间吗？')) {
+                window.location.reload();
+            }
+        }
+
+        // 发送消息
+        function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            
+            if (message) {
+                socket.emit('sendMessage', {
+                    roomId: roomId,
+                    message: message
+                });
+                addChatMessage(message, 'own');
+                input.value = '';
+            }
+        }
+
+        // 处理聊天输入键盘事件
+        function handleChatKeypress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+
+        // 添加聊天消息
+        function addChatMessage(message, type) {
+            const messagesContainer = document.getElementById('chatMessages');
+            const messageElement = document.createElement('div');
+            messageElement.className = `chat-message ${type}`;
+            messageElement.textContent = message;
+            messagesContainer.appendChild(messageElement);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        // 添加系统消息
+        function addSystemMessage(message) {
+            addChatMessage(message, 'system');
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>三角圆圈棋盘游戏</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .game-container {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .game-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f5f5f5;
+            border-radius: 10px;
+        }
+
+        .current-player {
+            font-weight: bold;
+            color: #764ba2;
+        }
+
+        .game-status {
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        .board-container {
+            position: relative;
+            width: 500px;
+            height: 500px;
+            margin: 0 auto;
+        }
+
+        .board-background {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 400px;
+            height: 400px;
+            background: #f5f5f5;
+            border-radius: 10px;
+            margin: 50px;
+        }
+
+        .board-lines {
+            position: absolute;
+            top: 50px;
+            left: 50px;
+            width: 400px;
+            height: 400px;
+        }
+
+        .horizontal-line {
+            position: absolute;
+            width: 100%;
+            height: 2px;
+            background: #666;
+        }
+
+        .vertical-line {
+            position: absolute;
+            width: 2px;
+            height: 100%;
+            background: #666;
+        }
+
+        .board {
+            position: absolute;
+            top: 50px;
+            left: 50px;
+            width: 400px;
+            height: 400px;
+        }
+
+        .cell {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            z-index: 10;
+            transform: translate(-50%, -50%);
+        }
+
+        .intersection {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.3s;
+        }
+
+        .intersection:hover {
+            background: rgba(0, 0, 0, 0.05);
+        }
+
+        .intersection.selected {
+            background: rgba(255, 235, 59, 0.5);
+            box-shadow: 0 0 20px rgba(255, 193, 7, 0.5);
+        }
+
+        .intersection.valid-move {
+            background: rgba(76, 175, 80, 0.3);
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        .piece {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 30px;
+            transition: transform 0.3s;
+        }
+
+        .piece.triangle::before {
+            content: '▲';
+            color: #e91e63;
+        }
+
+        .piece.circle::before {
+            content: '●';
+            color: #2196f3;
+        }
+
+        .controls {
+            margin: 20px auto;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            background: #667eea;
+            color: white;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background: #764ba2;
+        }
+
+        .rules {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 10px;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .rules h3 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .rules ul {
+            margin-left: 20px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .modal h2 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>三角圆圈棋盘游戏</h1>
+        
+        <div class="game-info">
+            <div class="current-player">当前玩家: <span id="currentPlayer">三角形</span></div>
+            <div class="game-status">状态: <span id="gameStatus">进行中</span></div>
+        </div>
+
+        <div class="board-container">
+            <div class="board-background"></div>
+            <div class="board-lines">
+                <!-- 横线 -->
+                <div class="horizontal-line" style="top: 0;"></div>
+                <div class="horizontal-line" style="top: 100px;"></div>
+                <div class="horizontal-line" style="top: 200px;"></div>
+                <div class="horizontal-line" style="top: 300px;"></div>
+                <div class="horizontal-line" style="top: 400px;"></div>
+                <!-- 竖线 -->
+                <div class="vertical-line" style="left: 0;"></div>
+                <div class="vertical-line" style="left: 100px;"></div>
+                <div class="vertical-line" style="left: 200px;"></div>
+                <div class="vertical-line" style="left: 300px;"></div>
+                <div class="vertical-line" style="left: 400px;"></div>
+            </div>
+            <div class="board" id="board"></div>
+        </div>
+
+        <div class="controls">
+            <button onclick="resetGame()">重新开始</button>
+            <button onclick="undoMove()">撤销</button>
+        </div>
+
+        <div class="rules">
+            <h3>游戏规则：</h3>
+            <ul>
+                <li><strong>移动限制：</strong>所有棋子只能沿着横线或竖线移动（不能走对角线）</li>
+                <li><strong>三角形棋子（红色）：</strong>正常移动1格到空位；吃子时跳跃2格（中间必须是空格）</li>
+                <li><strong>圆圈棋子（蓝色）：</strong>只能上下左右移动1格到空位</li>
+                <li><strong>获胜条件：</strong>
+                    <ul>
+                        <li>三角形吃掉所有圆圈棋子 → 三角形胜</li>
+                        <li>圆圈棋子包围所有三角形使其无法移动 → 圆圈胜</li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="modal" id="gameOverModal">
+        <div class="modal-content">
+            <h2 id="winnerText">游戏结束</h2>
+            <button onclick="resetGame()">再来一局</button>
+        </div>
+    </div>
+
+    <script>
+        // 游戏状态
+        let board = [];
+        let currentPlayer = 'triangle'; // triangle 或 circle
+        let selectedCell = null;
+        let gameOver = false;
+        let moveHistory = [];
+
+        // 初始化棋盘
+        function initBoard() {
+            // 创建5x5的空棋盘
+            board = Array(5).fill(null).map(() => Array(5).fill(null));
+            
+            // 3个三角形放在上方
+            board[0][1] = 'triangle';
+            board[0][2] = 'triangle';
+            board[0][3] = 'triangle';
+            
+            // 最下面三排全部是圆圈（15个）
+            // 第3排（索引2）
+            board[2][0] = 'circle';
+            board[2][1] = 'circle';
+            board[2][2] = 'circle';
+            board[2][3] = 'circle';
+            board[2][4] = 'circle';
+            
+            // 第4排（索引3）
+            board[3][0] = 'circle';
+            board[3][1] = 'circle';
+            board[3][2] = 'circle';
+            board[3][3] = 'circle';
+            board[3][4] = 'circle';
+            
+            // 第5排（索引4）
+            board[4][0] = 'circle';
+            board[4][1] = 'circle';
+            board[4][2] = 'circle';
+            board[4][3] = 'circle';
+            board[4][4] = 'circle';
+            
+            // 渲染棋盘
+            renderBoard();
+        }
+
+        // 渲染棋盘
+        function renderBoard() {
+            const boardElement = document.getElementById('board');
+            boardElement.innerHTML = '';
+            
+            for (let row = 0; row < 5; row++) {
+                for (let col = 0; col < 5; col++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.dataset.row = row;
+                    cell.dataset.col = col;
+                    
+                    // 将棋子定位在交叉点上
+                    cell.style.left = `${col * 100}px`;
+                    cell.style.top = `${row * 100}px`;
+                    
+                    const intersection = document.createElement('div');
+                    intersection.className = 'intersection';
+                    
+                    if (board[row][col]) {
+                        const piece = document.createElement('div');
+                        piece.className = `piece ${board[row][col]}`;
+                        intersection.appendChild(piece);
+                    }
+                    
+                    intersection.onclick = () => handleCellClick(row, col);
+                    cell.appendChild(intersection);
+                    boardElement.appendChild(cell);
+                }
+            }
+        }
+
+        // 处理格子点击
+        function handleCellClick(row, col) {
+            if (gameOver) return;
+            
+            if (selectedCell) {
+                // 尝试移动
+                if (isValidMove(selectedCell.row, selectedCell.col, row, col)) {
+                    makeMove(selectedCell.row, selectedCell.col, row, col);
+                    clearSelection();
+                    switchPlayer();
+                    checkGameStatus();
+                } else {
+                    clearSelection();
+                    // 如果点击的是当前玩家的棋子，选中它
+                    if (board[row][col] === currentPlayer) {
+                        selectCell(row, col);
+                    }
+                }
+            } else {
+                // 选择棋子
+                if (board[row][col] === currentPlayer) {
+                    selectCell(row, col);
+                }
+            }
+        }
+
+        // 选择格子
+        function selectCell(row, col) {
+            selectedCell = { row, col };
+            const cells = document.querySelectorAll('.intersection');
+            cells.forEach((intersection, index) => {
+                const cellElement = intersection.parentElement;
+                const r = parseInt(cellElement.dataset.row);
+                const c = parseInt(cellElement.dataset.col);
+                if (r === row && c === col) {
+                    intersection.classList.add('selected');
+                }
+                // 显示可能的移动
+                if (isValidMove(row, col, r, c)) {
+                    intersection.classList.add('valid-move');
+                }
+            });
+        }
+
+        // 清除选择
+        function clearSelection() {
+            selectedCell = null;
+            document.querySelectorAll('.intersection').forEach(intersection => {
+                intersection.classList.remove('selected', 'valid-move');
+            });
+        }
+
+        // 检查移动是否有效
+        function isValidMove(fromRow, fromCol, toRow, toCol) {
+            const piece = board[fromRow][fromCol];
+            
+            if (!piece) return false;
+            
+            const rowDiff = toRow - fromRow;
+            const colDiff = toCol - fromCol;
+            const absRowDiff = Math.abs(rowDiff);
+            const absColDiff = Math.abs(colDiff);
+            
+            // 所有棋子只能沿着横线或竖线移动，不能走对角线
+            const isOrthogonal = (absRowDiff === 0 && absColDiff > 0) ||  // 水平
+                                (absColDiff === 0 && absRowDiff > 0);      // 竖直
+            
+            if (!isOrthogonal) return false;
+            
+            if (piece === 'triangle') {
+                // 情况1：普通移动 - 移动1格到空位
+                if (board[toRow][toCol] === null) {
+                    const isOneStep = (absRowDiff === 1 && absColDiff === 0) ||  // 上下
+                                     (absRowDiff === 0 && absColDiff === 1);     // 左右
+                    return isOneStep;
+                }
+                
+                // 情况2：吃子 - 必须跳跃2格吃掉圆圈
+                if (board[toRow][toCol] === 'circle') {
+                    const isJumpDistance = (absRowDiff === 2 && absColDiff === 0) || // 竖直跳跃
+                                          (absRowDiff === 0 && absColDiff === 2);    // 水平跳跃
+                    
+                    if (!isJumpDistance) return false;
+                    
+                    // 检查中间位置（必须是空格才能跳跃吃子）
+                    const midRow = fromRow + Math.sign(rowDiff);
+                    const midCol = fromCol + Math.sign(colDiff);
+                    
+                    // 中间位置必须为空
+                    return board[midRow][midCol] === null;
+                }
+                
+                // 不能移动到有三角形的位置
+                return false;
+                
+            } else if (piece === 'circle') {
+                // 圆圈只能上下左右移动1格
+                const isOneStep = (absRowDiff === 1 && absColDiff === 0) ||  // 上下
+                                 (absRowDiff === 0 && absColDiff === 1);     // 左右
+                
+                if (!isOneStep) return false;
+                
+                // 目标位置必须为空
+                return board[toRow][toCol] === null;
+            }
+            
+            return false;
+        }
+
+        // 执行移动
+        function makeMove(fromRow, fromCol, toRow, toCol) {
+            // 保存历史
+            const move = {
+                from: { row: fromRow, col: fromCol },
+                to: { row: toRow, col: toCol },
+                piece: board[fromRow][fromCol],
+                captured: null
+            };
+            
+            // 如果是三角形跳跃到圆圈位置，吃掉圆圈
+            if (board[fromRow][fromCol] === 'triangle' && board[toRow][toCol] === 'circle') {
+                move.captured = {
+                    row: toRow,
+                    col: toCol,
+                    piece: 'circle'
+                };
+            }
+            
+            moveHistory.push(move);
+            
+            // 移动棋子
+            board[toRow][toCol] = board[fromRow][fromCol];
+            board[fromRow][fromCol] = null;
+            renderBoard();
+        }
+
+        // 切换玩家
+        function switchPlayer() {
+            currentPlayer = currentPlayer === 'triangle' ? 'circle' : 'triangle';
+            document.getElementById('currentPlayer').textContent = 
+                currentPlayer === 'triangle' ? '三角形' : '圆圈';
+        }
+
+        // 检查游戏状态
+        function checkGameStatus() {
+            const triangles = [];
+            const circles = [];
+            
+            // 统计棋子
+            for (let row = 0; row < 5; row++) {
+                for (let col = 0; col < 5; col++) {
+                    if (board[row][col] === 'triangle') {
+                        triangles.push({ row, col });
+                    } else if (board[row][col] === 'circle') {
+                        circles.push({ row, col });
+                    }
+                }
+            }
+            
+            // 三角形获胜条件：吃掉所有圆圈
+            if (circles.length === 0) {
+                endGame('三角形获胜！圆圈全部被消灭！');
+                return;
+            }
+            
+            // 检查三角形是否还能移动
+            let triangleCanMove = false;
+            for (const triangle of triangles) {
+                for (let row = 0; row < 5; row++) {
+                    for (let col = 0; col < 5; col++) {
+                        if (isValidMove(triangle.row, triangle.col, row, col)) {
+                            triangleCanMove = true;
+                            break;
+                        }
+                    }
+                    if (triangleCanMove) break;
+                }
+                if (triangleCanMove) break;
+            }
+            
+            // 检查圆圈是否还能移动
+            let circleCanMove = false;
+            for (const circle of circles) {
+                for (let row = 0; row < 5; row++) {
+                    for (let col = 0; col < 5; col++) {
+                        if (isValidMove(circle.row, circle.col, row, col)) {
+                            circleCanMove = true;
+                            break;
+                        }
+                    }
+                    if (circleCanMove) break;
+                }
+                if (circleCanMove) break;
+            }
+            
+            // 圆圈获胜条件：三角形无法移动（被完全围困）
+            if (!triangleCanMove) {
+                endGame('圆圈获胜！三角形被完全围困！');
+                return;
+            }
+            
+            // 平局条件：双方都无法移动（极少见的情况）
+            if (!triangleCanMove && !circleCanMove) {
+                endGame('平局！双方都无法移动！');
+            }
+        }
+
+        // 游戏结束
+        function endGame(message) {
+            gameOver = true;
+            document.getElementById('gameStatus').textContent = '游戏结束';
+            document.getElementById('winnerText').textContent = message;
+            document.getElementById('gameOverModal').classList.add('show');
+        }
+
+        // 重置游戏
+        function resetGame() {
+            gameOver = false;
+            currentPlayer = 'triangle';
+            selectedCell = null;
+            moveHistory = [];
+            document.getElementById('currentPlayer').textContent = '三角形';
+            document.getElementById('gameStatus').textContent = '进行中';
+            document.getElementById('gameOverModal').classList.remove('show');
+            clearSelection();
+            initBoard();
+        }
+
+        // 撤销移动
+        function undoMove() {
+            if (moveHistory.length === 0 || gameOver) return;
+            
+            const lastMove = moveHistory.pop();
+            board[lastMove.from.row][lastMove.from.col] = lastMove.piece;
+            board[lastMove.to.row][lastMove.to.col] = null;
+            
+            // 恢复被吃掉的棋子
+            if (lastMove.captured) {
+                board[lastMove.captured.row][lastMove.captured.col] = lastMove.captured.piece;
+            }
+            
+            switchPlayer();
+            clearSelection();
+            renderBoard();
+        }
+
+        // 初始化游戏
+        initBoard();
+    </script>
+</body>
+</html>
