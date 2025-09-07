@@ -37,10 +37,25 @@
         .game-info {
             display: flex;
             justify-content: space-between;
+            align-items: center;
             margin-bottom: 20px;
             padding: 15px;
             background: #f5f5f5;
             border-radius: 10px;
+        }
+
+        .language-selector {
+            position: relative;
+        }
+
+        .language-menu-item {
+            padding: 5px 10px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .language-menu-item:hover {
+            background-color: #f5f5f5;
         }
 
         .current-player {
@@ -278,6 +293,13 @@
                 font-size: 14px;
                 padding: 10px;
                 margin-bottom: 15px;
+                flex-wrap: wrap;
+                gap: 10px;
+            }
+
+            .language-selector button {
+                font-size: 11px;
+                padding: 3px 8px;
             }
 
             /* 棋盘自适应 - CSS Grid重构 */
@@ -513,6 +535,14 @@
         <div class="game-info">
             <div class="current-player">当前玩家: <span id="currentPlayer">三角形</span></div>
             <div class="game-status">状态: <span id="gameStatus">进行中</span></div>
+            <div class="language-selector">
+                <button id="languageSelector" onclick="toggleLanguageMenu()" style="background: white; color: #333; border: 1px solid #ccc; padding: 5px 10px; border-radius: 5px; font-size: 12px; cursor: pointer;">语言: 中文</button>
+                <div id="languageMenu" style="display: none; position: absolute; background: white; border: 1px solid #ccc; border-radius: 5px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); z-index: 1000; margin-top: 5px;">
+                    <div class="language-menu-item" onclick="setLanguage('zh-CN'); toggleLanguageMenu();">中文</div>
+                    <div class="language-menu-item" onclick="setLanguage('en'); toggleLanguageMenu();">English</div>
+                    <div class="language-menu-item" onclick="setLanguage('ja'); toggleLanguageMenu();">日本語</div>
+                </div>
+            </div>
         </div>
 
         <div class="board-container">
@@ -552,6 +582,213 @@
     </div>
 
     <script>
+        // 多语言支持
+        const translations = {
+            'zh-CN': {
+                title: '三角圆圈棋盘游戏',
+                currentPlayer: '当前玩家',
+                status: '状态',
+                inProgress: '进行中',
+                gameOver: '游戏结束',
+                triangle: '三角形',
+                circle: '圆圈',
+                restart: '重新开始',
+                undo: '撤销',
+                gameRules: '游戏规则：',
+                moveRestriction: '移动限制：',
+                moveRestrictionText: '所有棋子只能沿着横线或竖线移动（不能走对角线）',
+                trianglePiece: '三角形棋子（红色）：',
+                trianglePieceText: '正常移动1格到空位；吃子时跳跃2格（中间必须是空格）',
+                circlePiece: '圆圈棋子（蓝色）：',
+                circlePieceText: '只能上下左右移动1格到空位',
+                winCondition: '获胜条件：',
+                triangleWin: '三角形吃掉所有圆圈棋子 → 三角形胜',
+                circleWin: '圆圈棋子包围所有三角形使其无法移动 → 圆圈胜',
+                triangleWinMsg: '三角形获胜！圆圈全部被消灭！',
+                circleWinMsg: '圆圈获胜！三角形被完全围困！',
+                drawMsg: '平局！双方都无法移动！',
+                playAgain: '再来一局',
+                language: '语言'
+            },
+            'en': {
+                title: 'Triangle vs Circle Board Game',
+                currentPlayer: 'Current Player',
+                status: 'Status',
+                inProgress: 'In Progress',
+                gameOver: 'Game Over',
+                triangle: 'Triangle',
+                circle: 'Circle',
+                restart: 'Restart',
+                undo: 'Undo',
+                gameRules: 'Game Rules:',
+                moveRestriction: 'Movement Restrictions:',
+                moveRestrictionText: 'All pieces can only move along horizontal or vertical lines (no diagonal moves)',
+                trianglePiece: 'Triangle Pieces (Red):',
+                trianglePieceText: 'Move 1 square to empty space; capture by jumping 2 squares (middle square must be empty)',
+                circlePiece: 'Circle Pieces (Blue):',
+                circlePieceText: 'Can only move 1 square up, down, left, or right to empty spaces',
+                winCondition: 'Win Conditions:',
+                triangleWin: 'Triangles eliminate all circles → Triangle wins',
+                circleWin: 'Circles surround all triangles (no valid moves) → Circle wins',
+                triangleWinMsg: 'Triangle Wins! All circles eliminated!',
+                circleWinMsg: 'Circle Wins! Triangles completely surrounded!',
+                drawMsg: 'Draw! Neither side can move!',
+                playAgain: 'Play Again',
+                language: 'Language'
+            },
+            'ja': {
+                title: '三角vs円の戦略ゲーム',
+                currentPlayer: '現在のプレイヤー',
+                status: 'ステータス',
+                inProgress: 'ゲーム中',
+                gameOver: 'ゲーム終了',
+                triangle: '三角',
+                circle: '円',
+                restart: '再開始',
+                undo: '取り消し',
+                gameRules: 'ゲームルール：',
+                moveRestriction: '移動制限：',
+                moveRestrictionText: 'すべての駒は縦横のラインでのみ移動可能（斜め移動不可）',
+                trianglePiece: '三角の駒（赤）：',
+                trianglePieceText: '空きマスに1マス移動；取る時は2マスジャンプ（間は空きマス必須）',
+                circlePiece: '円の駒（青）：',
+                circlePieceText: '上下左右に1マスのみ空きマスへ移動',
+                winCondition: '勝利条件：',
+                triangleWin: '三角がすべての円を取る → 三角の勝ち',
+                circleWin: '円が三角を包囲して動けなくする → 円の勝ち',
+                triangleWinMsg: '三角の勝利！円をすべて消去！',
+                circleWinMsg: '円の勝利！三角を完全包囲！',
+                drawMsg: '引き分け！両者とも動けません！',
+                playAgain: 'もう一度',
+                language: '言語'
+            }
+        };
+
+        // 当前语言
+        let currentLanguage = 'zh-CN';
+
+        // 语言检测和初始化
+        function initLanguage() {
+            // 从localStorage获取保存的语言偏好
+            const savedLanguage = localStorage.getItem('gameLanguage');
+            if (savedLanguage && translations[savedLanguage]) {
+                currentLanguage = savedLanguage;
+            } else {
+                // 自动检测浏览器语言
+                const browserLanguage = navigator.language || navigator.userLanguage;
+                
+                // 精确匹配
+                if (translations[browserLanguage]) {
+                    currentLanguage = browserLanguage;
+                } else {
+                    // 匹配主要语言代码
+                    const mainLanguage = browserLanguage.split('-')[0];
+                    const availableLanguages = Object.keys(translations);
+                    
+                    for (const lang of availableLanguages) {
+                        if (lang.startsWith(mainLanguage)) {
+                            currentLanguage = lang;
+                            break;
+                        }
+                    }
+                    
+                    // 特殊处理：中文优先级
+                    if (mainLanguage === 'zh') {
+                        currentLanguage = 'zh-CN';
+                    }
+                }
+            }
+        }
+
+        // 获取翻译文本
+        function t(key) {
+            return translations[currentLanguage][key] || translations['zh-CN'][key] || key;
+        }
+
+        // 设置语言
+        function setLanguage(language) {
+            if (translations[language]) {
+                currentLanguage = language;
+                localStorage.setItem('gameLanguage', language);
+                updateAllTexts();
+                
+                // 更新HTML lang属性
+                document.documentElement.lang = language;
+                
+                // 更新页面标题
+                document.title = t('title');
+                
+                // 更新语言选择器显示
+                const languageSelector = document.getElementById('languageSelector');
+                if (languageSelector) {
+                    const languageNames = {
+                        'zh-CN': '中文',
+                        'en': 'English', 
+                        'ja': '日本語'
+                    };
+                    languageSelector.textContent = `${t('language')}: ${languageNames[language]}`;
+                }
+            }
+        }
+
+        // 更新所有文本
+        function updateAllTexts() {
+            // 更新游戏标题
+            const gameTitle = document.querySelector('h1');
+            if (gameTitle) gameTitle.textContent = t('title');
+            
+            // 更新游戏信息
+            document.querySelector('.current-player').innerHTML = `${t('currentPlayer')}: <span id="currentPlayer">${t(currentPlayer)}</span>`;
+            document.querySelector('.game-status').innerHTML = `${t('status')}: <span id="gameStatus">${gameOver ? t('gameOver') : t('inProgress')}</span>`;
+            
+            // 更新按钮
+            document.querySelector('button[onclick="resetGame()"]').textContent = t('restart');
+            document.querySelector('button[onclick="undoMove()"]').textContent = t('undo');
+            
+            // 更新规则
+            updateRulesText();
+            
+            // 更新模态框
+            const modalButton = document.querySelector('#gameOverModal button');
+            if (modalButton) modalButton.textContent = t('playAgain');
+        }
+
+        // 更新规则文本
+        function updateRulesText() {
+            const rulesContainer = document.querySelector('.rules');
+            if (rulesContainer) {
+                rulesContainer.innerHTML = `
+                    <h3>${t('gameRules')}</h3>
+                    <ul>
+                        <li><strong>${t('moveRestriction')}</strong>${t('moveRestrictionText')}</li>
+                        <li><strong>${t('trianglePiece')}</strong>${t('trianglePieceText')}</li>
+                        <li><strong>${t('circlePiece')}</strong>${t('circlePieceText')}</li>
+                        <li><strong>${t('winCondition')}</strong>
+                            <ul>
+                                <li>${t('triangleWin')}</li>
+                                <li>${t('circleWin')}</li>
+                            </ul>
+                        </li>
+                    </ul>
+                `;
+            }
+        }
+
+        // 切换语言菜单
+        function toggleLanguageMenu() {
+            const menu = document.getElementById('languageMenu');
+            menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+        }
+
+        // 点击页面其他地方关闭语言菜单
+        document.addEventListener('click', function(event) {
+            const languageSelector = document.querySelector('.language-selector');
+            const menu = document.getElementById('languageMenu');
+            if (languageSelector && menu && !languageSelector.contains(event.target)) {
+                menu.style.display = 'none';
+            }
+        });
+
         // 游戏状态
         let board = [];
         let currentPlayer = 'triangle'; // triangle 或 circle
@@ -771,8 +1008,7 @@
         // 切换玩家
         function switchPlayer() {
             currentPlayer = currentPlayer === 'triangle' ? 'circle' : 'triangle';
-            document.getElementById('currentPlayer').textContent = 
-                currentPlayer === 'triangle' ? '三角形' : '圆圈';
+            document.getElementById('currentPlayer').textContent = t(currentPlayer);
         }
 
         // 检查游戏状态
@@ -793,7 +1029,7 @@
             
             // 三角形获胜条件：吃掉所有圆圈
             if (circles.length === 0) {
-                endGame('三角形获胜！圆圈全部被消灭！');
+                endGame(t('triangleWinMsg'));
                 return;
             }
             
@@ -829,20 +1065,20 @@
             
             // 圆圈获胜条件：三角形无法移动（被完全围困）
             if (!triangleCanMove) {
-                endGame('圆圈获胜！三角形被完全围困！');
+                endGame(t('circleWinMsg'));
                 return;
             }
             
             // 平局条件：双方都无法移动（极少见的情况）
             if (!triangleCanMove && !circleCanMove) {
-                endGame('平局！双方都无法移动！');
+                endGame(t('drawMsg'));
             }
         }
 
         // 游戏结束
         function endGame(message) {
             gameOver = true;
-            document.getElementById('gameStatus').textContent = '游戏结束';
+            document.getElementById('gameStatus').textContent = t('gameOver');
             document.getElementById('winnerText').textContent = message;
             document.getElementById('gameOverModal').classList.add('show');
         }
@@ -853,8 +1089,8 @@
             currentPlayer = 'triangle';
             selectedCell = null;
             moveHistory = [];
-            document.getElementById('currentPlayer').textContent = '三角形';
-            document.getElementById('gameStatus').textContent = '进行中';
+            document.getElementById('currentPlayer').textContent = t('triangle');
+            document.getElementById('gameStatus').textContent = t('inProgress');
             document.getElementById('gameOverModal').classList.remove('show');
             clearSelection();
             initBoard();
@@ -879,7 +1115,14 @@
         }
 
         // 初始化游戏
-        initBoard();
+        function initGame() {
+            initLanguage();
+            setLanguage(currentLanguage);
+            initBoard();
+        }
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', initGame);
     </script>
 </body>
 </html>

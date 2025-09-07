@@ -444,6 +444,23 @@
             margin-left: 10px;
         }
 
+        .language-selector {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+
+        .language-menu-item {
+            padding: 5px 10px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .language-menu-item:hover {
+            background-color: #f5f5f5;
+        }
+
         /* 手机端响应式优化 */
         @media screen and (max-width: 768px) {
             body {
@@ -464,6 +481,19 @@
             .lobby-button {
                 padding: 12px 20px;
                 font-size: 16px;
+            }
+
+            .language-selector {
+                position: relative;
+                top: 0;
+                right: 0;
+                margin-bottom: 10px;
+                text-align: right;
+            }
+
+            .language-selector button {
+                font-size: 11px;
+                padding: 3px 8px;
             }
 
             .game-container {
@@ -746,6 +776,14 @@
 <body>
     <!-- 大厅界面 -->
     <div class="lobby-container" id="lobby">
+        <div class="language-selector">
+            <button id="languageSelector" onclick="toggleLanguageMenu()" style="background: white; color: #333; border: 1px solid #ccc; padding: 5px 10px; border-radius: 5px; font-size: 12px; cursor: pointer;">语言: 中文</button>
+            <div id="languageMenu" style="display: none; position: absolute; background: white; border: 1px solid #ccc; border-radius: 5px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); z-index: 1000; margin-top: 5px;">
+                <div class="language-menu-item" onclick="setLanguage('zh-CN'); toggleLanguageMenu();">中文</div>
+                <div class="language-menu-item" onclick="setLanguage('en'); toggleLanguageMenu();">English</div>
+                <div class="language-menu-item" onclick="setLanguage('ja'); toggleLanguageMenu();">日本語</div>
+            </div>
+        </div>
         <h1>三角圆圈棋盘游戏</h1>
         <div class="lobby-buttons">
             <button class="lobby-button" onclick="quickMatch()">快速匹配</button>
@@ -766,6 +804,14 @@
 
     <!-- 游戏界面 -->
     <div class="game-container" id="gameContainer">
+        <div class="language-selector" style="position: absolute; top: 10px; right: 10px;">
+            <button id="gameLanguageSelector" onclick="toggleLanguageMenu()" style="background: white; color: #333; border: 1px solid #ccc; padding: 3px 8px; border-radius: 3px; font-size: 10px; cursor: pointer;">语言: 中文</button>
+            <div id="gameLanguageMenu" style="display: none; position: absolute; background: white; border: 1px solid #ccc; border-radius: 5px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); z-index: 1000; margin-top: 5px; right: 0;">
+                <div class="language-menu-item" onclick="setLanguage('zh-CN'); toggleLanguageMenu();">中文</div>
+                <div class="language-menu-item" onclick="setLanguage('en'); toggleLanguageMenu();">English</div>
+                <div class="language-menu-item" onclick="setLanguage('ja'); toggleLanguageMenu();">日本語</div>
+            </div>
+        </div>
         <h1>三角圆圈棋盘游戏 - 网络对战</h1>
         
         <div class="network-info">
@@ -834,6 +880,301 @@
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
+        // 多语言支持
+        const translations = {
+            'zh-CN': {
+                title: '三角圆圈棋盘游戏',
+                titleNetwork: '三角圆圈棋盘游戏 - 网络对战版',
+                titleNetworkGame: '三角圆圈棋盘游戏 - 网络对战',
+                quickMatch: '快速匹配',
+                createRoom: '创建私人房间',
+                joinRoom: '加入房间',
+                offlineGame: '单机游戏',
+                roomPlaceholder: '输入房间号',
+                roomCreated: '房间已创建！分享房间号给朋友：',
+                copy: '复制',
+                waitingOpponent: '等待对手加入...',
+                waitingOpponentWithRoom: '等待对手加入... 房间号: ',
+                connected: '已连接',
+                disconnected: '断开连接',
+                youAre: '你是',
+                triangleRed: '三角形（红色）',
+                circleBlue: '圆圈（蓝色）',
+                spectatorMode: '观战模式',
+                currentPlayer: '当前玩家',
+                status: '状态',
+                waitingStart: '等待开始',
+                inProgress: '进行中',
+                gameOver: '游戏结束',
+                triangle: '三角形',
+                circle: '圆圈',
+                requestUndo: '请求撤销',
+                leaveRoom: '离开房间',
+                chatPlaceholder: '输入消息...',
+                send: '发送',
+                returnLobby: '返回大厅',
+                playAgain: '再来一局',
+                opponentRequestUndo: '对方请求撤销上一步',
+                agree: '同意',
+                reject: '拒绝',
+                pleaseEnterRoomId: '请输入房间号',
+                roomIdCopied: '房间号已复制',
+                gameStart: '游戏开始！',
+                undoSuccess: '撤销成功',
+                opponentDisconnected: '对手断开连接',
+                pauseWaitingReconnect: '暂停 - 等待重连',
+                opponentReconnected: '对手重新连接',
+                spectating: '你正在观战',
+                undoRejected: '撤销请求被拒绝',
+                confirmLeave: '确定要离开房间吗？',
+                language: '语言'
+            },
+            'en': {
+                title: 'Triangle vs Circle Board Game',
+                titleNetwork: 'Triangle vs Circle Board Game - Online Version',
+                titleNetworkGame: 'Triangle vs Circle Board Game - Online Battle',
+                quickMatch: 'Quick Match',
+                createRoom: 'Create Private Room',
+                joinRoom: 'Join Room',
+                offlineGame: 'Offline Game',
+                roomPlaceholder: 'Enter room ID',
+                roomCreated: 'Room created! Share room ID with friends:',
+                copy: 'Copy',
+                waitingOpponent: 'Waiting for opponent...',
+                waitingOpponentWithRoom: 'Waiting for opponent... Room ID: ',
+                connected: 'Connected',
+                disconnected: 'Disconnected',
+                youAre: 'You are',
+                triangleRed: 'Triangle (Red)',
+                circleBlue: 'Circle (Blue)',
+                spectatorMode: 'Spectator Mode',
+                currentPlayer: 'Current Player',
+                status: 'Status',
+                waitingStart: 'Waiting to Start',
+                inProgress: 'In Progress',
+                gameOver: 'Game Over',
+                triangle: 'Triangle',
+                circle: 'Circle',
+                requestUndo: 'Request Undo',
+                leaveRoom: 'Leave Room',
+                chatPlaceholder: 'Enter message...',
+                send: 'Send',
+                returnLobby: 'Return to Lobby',
+                playAgain: 'Play Again',
+                opponentRequestUndo: 'Opponent requests to undo last move',
+                agree: 'Agree',
+                reject: 'Reject',
+                pleaseEnterRoomId: 'Please enter room ID',
+                roomIdCopied: 'Room ID copied',
+                gameStart: 'Game started!',
+                undoSuccess: 'Undo successful',
+                opponentDisconnected: 'Opponent disconnected',
+                pauseWaitingReconnect: 'Paused - Waiting for reconnection',
+                opponentReconnected: 'Opponent reconnected',
+                spectating: 'You are spectating',
+                undoRejected: 'Undo request rejected',
+                confirmLeave: 'Are you sure you want to leave the room?',
+                language: 'Language'
+            },
+            'ja': {
+                title: '三角vs円の戦略ゲーム',
+                titleNetwork: '三角vs円の戦略ゲーム - オンライン版',
+                titleNetworkGame: '三角vs円の戦略ゲーム - ネット対戦',
+                quickMatch: 'クイックマッチ',
+                createRoom: 'プライベートルーム作成',
+                joinRoom: 'ルーム参加',
+                offlineGame: 'オフラインゲーム',
+                roomPlaceholder: 'ルームIDを入力',
+                roomCreated: 'ルーム作成完了！ルームIDを友達と共有：',
+                copy: 'コピー',
+                waitingOpponent: '対戦相手を待機中...',
+                waitingOpponentWithRoom: '対戦相手を待機中... ルームID: ',
+                connected: '接続済み',
+                disconnected: '切断',
+                youAre: 'あなたは',
+                triangleRed: '三角（赤）',
+                circleBlue: '円（青）',
+                spectatorMode: '観戦モード',
+                currentPlayer: '現在のプレイヤー',
+                status: 'ステータス',
+                waitingStart: '開始待ち',
+                inProgress: 'ゲーム中',
+                gameOver: 'ゲーム終了',
+                triangle: '三角',
+                circle: '円',
+                requestUndo: '取り消し要求',
+                leaveRoom: 'ルーム退出',
+                chatPlaceholder: 'メッセージを入力...',
+                send: '送信',
+                returnLobby: 'ロビーに戻る',
+                playAgain: 'もう一度',
+                opponentRequestUndo: '相手が前の手の取り消しを要求しています',
+                agree: '同意',
+                reject: '拒否',
+                pleaseEnterRoomId: 'ルームIDを入力してください',
+                roomIdCopied: 'ルームIDをコピーしました',
+                gameStart: 'ゲーム開始！',
+                undoSuccess: '取り消し成功',
+                opponentDisconnected: '対戦相手が切断しました',
+                pauseWaitingReconnect: '一時停止 - 再接続を待機中',
+                opponentReconnected: '対戦相手が再接続しました',
+                spectating: '観戦中です',
+                undoRejected: '取り消し要求が拒否されました',
+                confirmLeave: '本当にルームを退出しますか？',
+                language: '言語'
+            }
+        };
+
+        // 当前语言
+        let currentLanguage = 'zh-CN';
+
+        // 语言检测和初始化
+        function initLanguage() {
+            // 从localStorage获取保存的语言偏好
+            const savedLanguage = localStorage.getItem('gameLanguage');
+            if (savedLanguage && translations[savedLanguage]) {
+                currentLanguage = savedLanguage;
+            } else {
+                // 自动检测浏览器语言
+                const browserLanguage = navigator.language || navigator.userLanguage;
+                
+                // 精确匹配
+                if (translations[browserLanguage]) {
+                    currentLanguage = browserLanguage;
+                } else {
+                    // 匹配主要语言代码
+                    const mainLanguage = browserLanguage.split('-')[0];
+                    const availableLanguages = Object.keys(translations);
+                    
+                    for (const lang of availableLanguages) {
+                        if (lang.startsWith(mainLanguage)) {
+                            currentLanguage = lang;
+                            break;
+                        }
+                    }
+                    
+                    // 特殊处理：中文优先级
+                    if (mainLanguage === 'zh') {
+                        currentLanguage = 'zh-CN';
+                    }
+                }
+            }
+        }
+
+        // 获取翻译文本
+        function t(key) {
+            return translations[currentLanguage][key] || translations['zh-CN'][key] || key;
+        }
+
+        // 设置语言
+        function setLanguage(language) {
+            if (translations[language]) {
+                currentLanguage = language;
+                localStorage.setItem('gameLanguage', language);
+                updateAllTexts();
+                
+                // 更新HTML lang属性
+                document.documentElement.lang = language;
+                
+                // 更新页面标题
+                document.title = t('titleNetwork');
+                
+                // 更新语言选择器显示
+                const languageNames = {
+                    'zh-CN': '中文',
+                    'en': 'English', 
+                    'ja': '日本語'
+                };
+                const languageText = `${t('language')}: ${languageNames[language]}`;
+                
+                const languageSelector = document.getElementById('languageSelector');
+                if (languageSelector) {
+                    languageSelector.textContent = languageText;
+                }
+                
+                const gameLanguageSelector = document.getElementById('gameLanguageSelector');
+                if (gameLanguageSelector) {
+                    gameLanguageSelector.textContent = languageText;
+                }
+            }
+        }
+
+        // 更新所有文本
+        function updateAllTexts() {
+            // 更新大厅界面
+            document.querySelector('#lobby h1').textContent = t('title');
+            document.querySelector('button[onclick="quickMatch()"]').textContent = t('quickMatch');
+            document.querySelector('button[onclick="createPrivateRoom()"]').textContent = t('createRoom');
+            document.querySelector('button[onclick="joinPrivateRoom()"]').textContent = t('joinRoom');
+            document.querySelector('button[onclick="playOffline()"]').textContent = t('offlineGame');
+            document.getElementById('roomIdInput').placeholder = t('roomPlaceholder');
+            document.querySelector('.copy-button').textContent = t('copy');
+            
+            // 更新房间信息文本
+            const roomInfoTexts = document.querySelector('#roomInfo p:first-child');
+            if (roomInfoTexts) roomInfoTexts.textContent = t('roomCreated');
+            const waitingText = document.querySelector('#roomInfo p:last-child');
+            if (waitingText) waitingText.textContent = t('waitingOpponent');
+            
+            // 更新游戏界面
+            document.querySelector('#gameContainer h1').textContent = t('titleNetworkGame');
+            document.getElementById('connectionText').textContent = t('connected');
+            document.querySelector('.player-role').innerHTML = `${t('youAre')}: <span id="playerRole">-</span>`;
+            document.getElementById('spectatorBadge').textContent = t('spectatorMode');
+            document.querySelector('.current-player').innerHTML = `${t('currentPlayer')}: <span id="currentPlayer">${t('triangle')}</span>`;
+            document.querySelector('.game-status').innerHTML = `${t('status')}: <span id="gameStatus">${t('waitingStart')}</span>`;
+            document.getElementById('undoButton').textContent = t('requestUndo');
+            document.querySelector('button[onclick="leaveRoom()"]').textContent = t('leaveRoom');
+            document.getElementById('chatInput').placeholder = t('chatPlaceholder');
+            document.querySelector('button[onclick="sendMessage()"]').textContent = t('send');
+            
+            // 更新模态框
+            document.querySelector('#gameOverModal button[onclick="returnToLobby()"]').textContent = t('returnLobby');
+            document.querySelector('#gameOverModal button[onclick="rematch()"]').textContent = t('playAgain');
+            document.querySelector('#undoModal h2').textContent = t('opponentRequestUndo');
+            document.querySelector('#undoModal button[onclick="acceptUndo()"]').textContent = t('agree');
+            document.querySelector('#undoModal button[onclick="rejectUndo()"]').textContent = t('reject');
+            
+            // 更新等待消息
+            const waitingMessage = document.querySelector('#waitingMessage');
+            if (waitingMessage && waitingMessage.textContent.includes('等待对手加入...')) {
+                const roomId = document.getElementById('waitingRoomId').textContent;
+                waitingMessage.innerHTML = `${t('waitingOpponentWithRoom')}<span id="waitingRoomId">${roomId}</span>`;
+            }
+        }
+
+        // 切换语言菜单
+        function toggleLanguageMenu() {
+            const menu = document.getElementById('languageMenu');
+            const gameMenu = document.getElementById('gameLanguageMenu');
+            
+            if (menu) {
+                menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+            }
+            if (gameMenu) {
+                gameMenu.style.display = gameMenu.style.display === 'none' ? 'block' : 'none';
+            }
+        }
+
+        // 点击页面其他地方关闭语言菜单
+        document.addEventListener('click', function(event) {
+            const languageSelectors = document.querySelectorAll('.language-selector');
+            const menu = document.getElementById('languageMenu');
+            const gameMenu = document.getElementById('gameLanguageMenu');
+            
+            let clickedInsideSelector = false;
+            languageSelectors.forEach(selector => {
+                if (selector.contains(event.target)) {
+                    clickedInsideSelector = true;
+                }
+            });
+            
+            if (!clickedInsideSelector) {
+                if (menu) menu.style.display = 'none';
+                if (gameMenu) gameMenu.style.display = 'none';
+            }
+        });
+        
         // 网络游戏状态
         let socket = null;
         let roomId = null;
@@ -893,9 +1234,9 @@
                 board = data.board;
                 currentPlayer = data.currentPlayer;
                 hideWaitingMessage();
-                updateGameStatus('进行中');
+                updateGameStatus(t('inProgress'));
                 renderBoard();
-                addSystemMessage('游戏开始！');
+                addSystemMessage(t('gameStart'));
             });
 
             // 移动更新
@@ -927,7 +1268,7 @@
                 document.getElementById('spectatorBadge').style.display = 'block';
                 document.getElementById('undoButton').disabled = true;
                 renderBoard();
-                addSystemMessage('你正在观战');
+                addSystemMessage(t('spectating'));
             });
 
             // 撤销请求
@@ -940,19 +1281,19 @@
                 board = data.board;
                 currentPlayer = data.currentPlayer;
                 renderBoard();
-                addSystemMessage('撤销成功');
+                addSystemMessage(t('undoSuccess'));
             });
 
             // 玩家断线
             socket.on('playerDisconnected', (data) => {
-                addSystemMessage('对手断开连接');
-                updateGameStatus('暂停 - 等待重连');
+                addSystemMessage(t('opponentDisconnected'));
+                updateGameStatus(t('pauseWaitingReconnect'));
             });
 
             // 玩家重连
             socket.on('playerReconnected', (data) => {
-                addSystemMessage('对手重新连接');
-                updateGameStatus('进行中');
+                addSystemMessage(t('opponentReconnected'));
+                updateGameStatus(t('inProgress'));
             });
 
             // 新消息
@@ -982,7 +1323,7 @@
         function joinPrivateRoom() {
             const roomIdValue = document.getElementById('roomIdInput').value.trim();
             if (!roomIdValue) {
-                alert('请输入房间号');
+                alert(t('pleaseEnterRoomId'));
                 return;
             }
             connectToServer();
@@ -1004,7 +1345,7 @@
         function copyRoomId() {
             const roomIdText = document.getElementById('roomIdDisplay').textContent;
             navigator.clipboard.writeText(roomIdText).then(() => {
-                alert('房间号已复制');
+                alert(t('roomIdCopied'));
             });
         }
 
@@ -1032,16 +1373,16 @@
             
             if (connected) {
                 indicator.classList.remove('disconnected');
-                text.textContent = '已连接';
+                text.textContent = t('connected');
             } else {
                 indicator.classList.add('disconnected');
-                text.textContent = '断开连接';
+                text.textContent = t('disconnected');
             }
         }
 
         // 更新玩家信息
         function updatePlayerInfo() {
-            const roleText = playerRole === 'triangle' ? '三角形（红色）' : '圆圈（蓝色）';
+            const roleText = playerRole === 'triangle' ? t('triangleRed') : t('circleBlue');
             document.getElementById('playerRole').textContent = roleText;
         }
 
@@ -1058,7 +1399,7 @@
             
             isMyTurn = (currentPlayer === playerRole);
             document.getElementById('currentPlayer').textContent = 
-                currentPlayer === 'triangle' ? '三角形' : '圆圈';
+                currentPlayer === 'triangle' ? t('triangle') : t('circle');
             
             // 计算棋盘实际大小以适应手机屏幕
             const boardSize = boardElement.offsetWidth || 400;
@@ -1245,13 +1586,13 @@
         // 拒绝撤销
         function rejectUndo() {
             document.getElementById('undoModal').classList.remove('show');
-            addSystemMessage('撤销请求被拒绝');
+            addSystemMessage(t('undoRejected'));
         }
 
         // 游戏结束
         function endGame(message) {
             gameOver = true;
-            updateGameStatus('游戏结束');
+            updateGameStatus(t('gameOver'));
             document.getElementById('winnerText').textContent = message;
             document.getElementById('gameOverModal').classList.add('show');
         }
@@ -1270,7 +1611,7 @@
 
         // 离开房间
         function leaveRoom() {
-            if (confirm('确定要离开房间吗？')) {
+            if (confirm(t('confirmLeave'))) {
                 window.location.reload();
             }
         }
@@ -1311,6 +1652,15 @@
         function addSystemMessage(message) {
             addChatMessage(message, 'system');
         }
+
+        // 初始化游戏
+        function initGame() {
+            initLanguage();
+            setLanguage(currentLanguage);
+        }
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', initGame);
     </script>
 </body>
 </html>
